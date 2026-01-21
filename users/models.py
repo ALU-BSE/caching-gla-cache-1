@@ -8,6 +8,9 @@ from django.db import models
 from django.db.models.fields import EmailField, CharField, BooleanField, DateTimeField
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.core.cache import cache
 
 
 
@@ -114,5 +117,11 @@ class Rider(models.Model):
         return f"Rider: {self.user.email}"
 
 
-
-
+@receiver([post_save, post_delete], sender=User)
+def invalidate_user_cache(sender, instance, **kwargs):
+    """
+    This function runs every time a User is saved or deleted.
+    It clears the cache to ensure no stale data is served.
+    """
+    print(f"User {instance.email} changed. Clearing cache...")  # Optional: for debugging
+    cache.clear()
